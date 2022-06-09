@@ -5,7 +5,7 @@ PROJECTNAME := "installer-nightly-tests"
 
 TOPDIR=$(shell pwd)
 
-KUBECONFIG := "$(TOPDIR)/kubeconfig"
+KUBECONFIG := "/workspace/conf"
 
 check-env-sub-domain:
 ifndef TF_VAR_TEST_ID
@@ -56,6 +56,38 @@ get-kubeconfig:
 	${KUBECONFIG}
 
 KOTS_KONFIG := "./manifests/kots-config.yaml"
+
+get-base-config:
+	envsubst < ${KOTS_KONFIG} > tmp_config.yml
+
+get-config-incluster:
+	@echo "Nothing to do"
+
+BASE64_GCP_KEY ?= $(shell cat $$TF_VAR_sa_creds | tr -d '\n' | base64)
+
+
+get-config-gcp-storage: config-file = "./manifests/kots-config-gcp-storage.yaml"
+get-config-gcp-storage:
+	envsubst '$${BASE64_GCP_KEY}' < ${config-file} > tmp_2_config.yml
+	yq m -i tmp_config.yml tmp_2_config.yml
+
+get-config-gcp-registry: config-file = "./manifests/kots-config-gcp-registry.yaml"
+get-config-gcp-registry:
+	envsubst '$${BASE64_GCP_KEY}' < ${config-file} > tmp_3_config.yml
+	yq m -i tmp_config.yml tmp_3_config.yml
+
+# get-config-gcp-db: config-file = "./manifests/kots-config-gcp-db.yaml"
+get-config-gcp-db:
+# 	envsubst < ${config-file} > tmp_2_config.yml
+# 	yq m -i tmp_config.yml tmp_2_config.yml
+
+storage ?= incluster
+registry ?= incluster
+db ?= incluster
+.PHONY:
+## generate-kots-config: Generate the kots config based on test config
+generate-kots-config: get-base-config get-config-${storage} get-config-${registry} get-config-${db}
+
 license_community_beta := "../licenses/Community (Beta).yaml"
 license_community_stable := "../licenses/Community.yaml"
 license_community_unstable := "../licenses/Community (Unstable).yaml"
@@ -68,9 +100,8 @@ channel ?= unstable
 version ?= -
 kots-install: version-flag = $(if $(version:-=),--app-version-label=$(version),)
 kots-install: preflight-flag = $(if $(preflights:true=),--skip-preflights,)
-kots-install: license-file =  $(license_community_$(channel))
+kots-install: license-file = $(if $(license_community_$(channel)),$(license_community_$(channel)),"../licenses/$(channel).yaml")
 kots-install: install-kots-cli
-	envsubst < ${KOTS_KONFIG} > tmp_config.yml
 	kubectl kots install gitpod/${channel} \
 	--skip-rbac-check ${version-flag} ${preflight-flag} \
 					--namespace gitpod --kubeconfig=${KUBECONFIG} \
@@ -92,6 +123,10 @@ check-gitpod-installation: delete-cm-setup check-kots-app check-env-sub-domain
 run-tests:
 	./tests.sh ${KUBECONFIG}
 
+kots-uprgade:
+	@echo "Upgrade gitpod KOTS app to latest"
+	kubectl kots upstream upgrade --kubeconfig=${KUBECONFIG} gitpod -n gitpod --deploy
+
 cleanup:
 	terraform workspace select $(TF_VAR_TEST_ID)
 	which ${KUBECONFIG} && terraform destroy -target=module.externaldns -var kubeconfig=${KUBECONFIG} --auto-approve || echo "No kubeconfig file"
@@ -101,11 +136,9 @@ cleanup:
 
 get-results:
 	@echo "If you have gotten this far, it means your setup succeeded"
-	@echo
-	@echo "URL of your setup is: "https://$(TF_VAR_TEST_ID).gitpod-self-hosted.com""
-	@echo
+	@echo "The IP address of you setup is "$(TF_VAR_TEST_ID).gitpod-self-hosted.com""
 	@echo "Following is the KUBECONFIG you can use to connect to the cluster:"
-	@echo
+	@cat tmp_config.yml
 	@cat ${KUBECONFIG}
 
 list-state:

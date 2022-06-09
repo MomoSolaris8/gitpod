@@ -7,17 +7,20 @@
 # there are many test binaries, each can have failures
 
 TEST_DIR="../../test/tests"
+KUBECONFIG=$1
 
 # shellcheck disable=SC2045
 FAILURE_COUNT=0
 CURRENT=$(pwd)
+args+=( "-kubeconfig=${KUBECONFIG}" )
+args+=( "-namespace=default" )
 for i in $(find ${TEST_DIR} -type d -links 2 ! -empty | sort); do
     # Will print */ if no directories are available
     TEST_NAME=$(basename "${i}")
     echo "running integration for ${TEST_NAME}"
 
     cd "${i}" || echo "Path invalid for ${TEST_NAME}"
-    go test -v ./... "-kubeconfig=$1" -namespace=gitpod 2>&0
+    go test "${args[@]}" -v ./... "-kubeconfig=$1" -namespace=gitpod 2>&0
     TEST_STATUS=$?
     if [ "$TEST_STATUS" -ne "0" ]; then
         FAILURE_COUNT=$((FAILURE_COUNT+1))
