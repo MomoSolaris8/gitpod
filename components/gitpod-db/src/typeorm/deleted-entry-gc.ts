@@ -63,6 +63,7 @@ const tables: TableWithDeletion[] = [
     { deletionColumn: "deleted", name: "d_b_project_info" },
     { deletionColumn: "deleted", name: "d_b_project_usage" },
     { deletionColumn: "deleted", name: "d_b_team_subscription2" },
+    { deletionColumn: "deleted", name: "d_b_user_ssh_public_key" },
 ];
 
 interface TableWithDeletion {

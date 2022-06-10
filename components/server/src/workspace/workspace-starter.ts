@@ -1334,6 +1334,8 @@ export class WorkspaceStarter {
         }
         spec.setAdmission(admissionLevel);
         spec.setVolumeSnapshot(volumeSnapshotInfo);
+        const sshKeys = await this.userDB.trace(traceCtx).getSSHPublicKeys(user.id);
+        spec.setSshPublicKeysList(sshKeys.map((e) => e.key));
         return spec;
     }
 
@@ -1367,6 +1369,10 @@ export class WorkspaceStarter {
             "function:getEnvVars",
             "function:setEnvVar",
             "function:deleteEnvVar",
+            "function:hasSSHPublicKey",
+            "function:getSSHPublicKeys",
+            "function:addSSHPublicKey",
+            "function:deleteSSHPublicKey",
             "function:trackEvent",
 
             "resource:" +

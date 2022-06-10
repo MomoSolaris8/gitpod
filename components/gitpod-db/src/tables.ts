@@ -268,6 +268,11 @@ export class GitpodTableDescriptionProvider implements TableDescriptionProvider 
             deletionColumn: "deleted",
             timeColumn: "_lastModified",
         },
+        {
+            name: "d_b_user_ssh_public_key",
+            primaryKeys: ["id"],
+            timeColumn: "_lastModified",
+        },
         /**
          * BEWARE
          *

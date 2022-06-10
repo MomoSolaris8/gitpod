@@ -38,6 +38,18 @@ export namespace Transformer {
         },
     };
 
+    export const MAP_ISO_STRING_TO_TIMESTAMP_DROP_NULLABLE: ValueTransformer = {
+        to(value: any): any {
+            return MAP_ISO_STRING_TO_TIMESTAMP_DROP.to(value);
+        },
+        from(value: any): any {
+            if (value == null) {
+                return null;
+            }
+            return MAP_ISO_STRING_TO_TIMESTAMP_DROP.from(value);
+        },
+    };
+
     export const SIMPLE_JSON = (defaultValue: any) => {
         return <ValueTransformer>{
             to(value: any): any {
