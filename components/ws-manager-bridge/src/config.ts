@@ -31,7 +31,7 @@ export interface Configuration {
 
     // timeouts configures the timeout behaviour of pre-workspace cluster workspaces
     timeouts: {
-        metaInstanceCheckIntervalSeconds: number;
+        controllerIntervalSeconds: number;
         preparingPhaseSeconds: number;
         buildingPhaseSeconds: number;
         stoppingPhaseSeconds: number;

@@ -25,7 +25,7 @@ import {
 } from "@gitpod/ws-manager/lib";
 import { WorkspaceDB } from "@gitpod/gitpod-db/lib/workspace-db";
 import { UserDB } from "@gitpod/gitpod-db/lib/user-db";
-import { log } from "@gitpod/gitpod-protocol/lib/util/logging";
+import { log, LogContext } from "@gitpod/gitpod-protocol/lib/util/logging";
 import { TraceContext } from "@gitpod/gitpod-protocol/lib/util/tracing";
 import { IAnalyticsWriter } from "@gitpod/gitpod-protocol/lib/analytics";
 import { TracedWorkspaceDB, TracedUserDB, DBWithTracing } from "@gitpod/gitpod-db/lib/traced-db";
@@ -103,8 +103,17 @@ export class WorkspaceManagerBridge implements Disposable {
             if (controllerInterval <= 0) {
                 throw new Error("controllerInterval <= 0!");
             }
-            log.debug(`Starting controller: ${cluster.name}`, logPayload);
-            this.startController(clientProvider, controllerInterval, this.config.controllerMaxDisconnectSeconds);
+
+            log.debug(`Starting controllers: ${cluster.name}`, logPayload);
+            // Control all "running" workspace instances
+            this.startWsManagerController(
+                clientProvider,
+                controllerInterval,
+                this.config.controllerMaxDisconnectSeconds,
+            );
+
+            // Control all workspace instances that only live in the DB
+            this.startDBController(this.config.timeouts.controllerIntervalSeconds);
         } else {
             // _DO NOT_ update the DB (another bridge is responsible for that)
             // Still, listen to all updates, generate/derive new state and distribute it locally!
@@ -399,7 +408,7 @@ export class WorkspaceManagerBridge implements Disposable {
         }
     }
 
-    protected startController(
+    protected startWsManagerController(
         clientProvider: ClientProvider,
         controllerIntervalSeconds: number,
         controllerMaxDisconnectSeconds: number,
@@ -409,7 +418,7 @@ export class WorkspaceManagerBridge implements Disposable {
             repeat(async () => {
                 try {
                     const client = await clientProvider();
-                    await this.controlInstallationInstances(client);
+                    await this.controlWsManagerInstances(client);
 
                     disconnectStarted = Number.MAX_SAFE_INTEGER; // Reset disconnect period
                 } catch (e) {
@@ -425,7 +434,7 @@ export class WorkspaceManagerBridge implements Disposable {
         );
     }
 
-    protected async controlInstallationInstances(client: PromisifiedWorkspaceManagerClient) {
+    protected async controlWsManagerInstances(client: PromisifiedWorkspaceManagerClient) {
         const installation = this.cluster.name;
         log.debug("controlling instances", { installation });
         let ctx: TraceContext = {};
@@ -466,6 +475,92 @@ export class WorkspaceManagerBridge implements Disposable {
             );
         }
         await Promise.all(promises);
+    }
+
+    protected startDBController(controllerIntervalSeconds: number) {
+        this.disposables.push(
+            repeat(async () => {
+                const span = TraceContext.startSpan("controlDBInstances");
+                const ctx = { span };
+                try {
+                    const infos = await this.workspaceDB
+                        .trace(ctx)
+                        .findRunningInstancesWithWorkspaces(this.config.installation, undefined, true);
+
+                    await Promise.all(infos.map((info) => this.controlDBInstance(ctx, info)));
+                } catch (err) {
+                    log.error("Error while running controlDBInstances", err, {
+                        installation: this.cluster.name,
+                    });
+                    TraceContext.setError(ctx, err);
+                } finally {
+                    span.finish();
+                }
+            }, controllerIntervalSeconds * 1000),
+        );
+    }
+
+    /**
+     * This loop controls all instances of this installation during periods where ws-manager does not control them, but we have them in our DB.
+     * These currently are:
+     *  - preparing
+     *  - building
+     * It also covers these phases, as fallback, when - for whatever reason - we no longer receive updates from ws-manager.
+     *  - stopping (as fallback, in case ws-manager is stopped to early)
+     *  - unknown (fallback)
+     * @param info
+     */
+    protected async controlDBInstance(_ctx: TraceContext, info: RunningWorkspaceInfo) {
+        const logContext: LogContext = {
+            userId: info.workspace.ownerId,
+            workspaceId: info.workspace.id,
+            instanceId: info.latestInstance.id,
+        };
+        const ctx = TraceContext.childContext("controlDBInstance", _ctx);
+        try {
+            const now = Date.now();
+            const creationTime = new Date(info.latestInstance.creationTime).getTime();
+            const stoppingTime = new Date(info.latestInstance.stoppingTime ?? now).getTime(); // stoppingTime only set if entered stopping state
+            const timedOutInPreparing = now >= creationTime + this.config.timeouts.preparingPhaseSeconds * 1000;
+            const timedOutInBuilding = now >= creationTime + this.config.timeouts.buildingPhaseSeconds * 1000;
+            const timedOutInStopping = now >= stoppingTime + this.config.timeouts.stoppingPhaseSeconds * 1000;
+            const timedOutInUnknown = now >= creationTime + this.config.timeouts.unknownPhaseSeconds * 1000;
+            const currentPhase = info.latestInstance.status.phase;
+
+            log.debug(logContext, "Controller: Checking for instances in the DB to mark as stopped", {
+                creationTime,
+                stoppingTime,
+                timedOutInPreparing,
+                timedOutInStopping,
+                currentPhase,
+            });
+
+            if (
+                (currentPhase === "preparing" && timedOutInPreparing) ||
+                (currentPhase === "building" && timedOutInBuilding) ||
+                (currentPhase === "stopping" && timedOutInStopping) ||
+                (currentPhase === "unknown" && timedOutInUnknown)
+            ) {
+                log.info(logContext, "Controller: Marking workspace instance as stopped", {
+                    creationTime,
+                    currentPhase,
+                });
+
+                const nowISO = new Date(now).toISOString();
+                info.latestInstance.stoppingTime = nowISO;
+                info.latestInstance.stoppedTime = nowISO;
+                info.latestInstance.status.phase = "stopped";
+                await this.workspaceDB.trace(ctx).storeInstance(info.latestInstance);
+                await this.messagebus.notifyOnInstanceUpdate(ctx, info.workspace.ownerId, info.latestInstance);
+
+                await this.prebuildUpdater.stopPrebuildInstance(ctx, info.latestInstance);
+            }
+        } catch (err) {
+            log.warn(logContext, "Controller: Error while marking workspace instance as stopped", err);
+            TraceContext.setError(ctx, err);
+        } finally {
+            ctx.span.finish();
+        }
     }
 
     protected async onInstanceStopped(

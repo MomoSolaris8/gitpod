@@ -22,11 +22,11 @@ type ClusterService struct {
 }
 
 type Timeouts struct {
-	MetaInstanceCheckIntervalSeconds int32 `json:"metaInstanceCheckIntervalSeconds"`
-	PreparingPhaseSeconds            int32 `json:"preparingPhaseSeconds"`
-	StoppingPhaseSeconds             int32 `json:"stoppingPhaseSeconds"`
-	BuildingPhaseSeconds             int32 `json:"buildingPhaseSeconds"`
-	UnknownPhaseSeconds              int32 `json:"unknownPhaseSeconds"`
+	ControllerIntervalSeconds int32 `json:"controllerIntervalSeconds"`
+	PreparingPhaseSeconds     int32 `json:"preparingPhaseSeconds"`
+	StoppingPhaseSeconds      int32 `json:"stoppingPhaseSeconds"`
+	BuildingPhaseSeconds      int32 `json:"buildingPhaseSeconds"`
+	UnknownPhaseSeconds       int32 `json:"unknownPhaseSeconds"`
 }
 
 // WorkspaceCluster from components/gitpod-protocol/src/workspace-cluster.ts
