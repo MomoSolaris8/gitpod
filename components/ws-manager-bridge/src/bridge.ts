@@ -403,14 +403,13 @@ export class WorkspaceManagerBridge implements Disposable {
         clientProvider: ClientProvider,
         controllerIntervalSeconds: number,
         controllerMaxDisconnectSeconds: number,
-        maxTimeToRunningPhaseSeconds = 60 * 60,
     ) {
         let disconnectStarted = Number.MAX_SAFE_INTEGER;
         this.disposables.push(
             repeat(async () => {
                 try {
                     const client = await clientProvider();
-                    await this.controlInstallationInstances(client, maxTimeToRunningPhaseSeconds);
+                    await this.controlInstallationInstances(client);
 
                     disconnectStarted = Number.MAX_SAFE_INTEGER; // Reset disconnect period
                 } catch (e) {
@@ -426,10 +425,7 @@ export class WorkspaceManagerBridge implements Disposable {
         );
     }
 
-    protected async controlInstallationInstances(
-        client: PromisifiedWorkspaceManagerClient,
-        maxTimeToRunningPhaseSeconds: number,
-    ) {
+    protected async controlInstallationInstances(client: PromisifiedWorkspaceManagerClient) {
         const installation = this.cluster.name;
         log.debug("controlling instances", { installation });
         let ctx: TraceContext = {};
@@ -444,12 +440,7 @@ export class WorkspaceManagerBridge implements Disposable {
         const promises: Promise<any>[] = [];
         for (const [instanceId, ri] of runningInstancesIdx.entries()) {
             const instance = ri.latestInstance;
-            if (
-                !(
-                    instance.status.phase === "running" ||
-                    durationLongerThanSeconds(Date.parse(instance.creationTime), maxTimeToRunningPhaseSeconds)
-                )
-            ) {
+            if (instance.status.phase !== "running") {
                 log.debug({ instanceId }, "Skipping instance", {
                     phase: instance.status.phase,
                     creationTime: instance.creationTime,
@@ -460,15 +451,19 @@ export class WorkspaceManagerBridge implements Disposable {
 
             log.info(
                 { instanceId, workspaceId: instance.workspaceId },
-                "Database says the instance is starting for too long or running, but wsman does not know about it. Marking as stopped in database.",
+                "Database says the instance is running, but wsman does not know about it. Marking as stopped in database.",
                 { installation },
             );
             instance.status.phase = "stopped";
             instance.stoppingTime = new Date().toISOString();
             instance.stoppedTime = new Date().toISOString();
-            promises.push(this.workspaceDB.trace({}).storeInstance(instance));
-            promises.push(this.onInstanceStopped({}, ri.workspace.ownerId, instance));
-            promises.push(this.prebuildUpdater.stopPrebuildInstance(ctx, instance));
+            promises.push(
+                (async () => {
+                    await this.workspaceDB.trace({}).storeInstance(instance);
+                    await this.onInstanceStopped({}, ri.workspace.ownerId, instance);
+                    await this.prebuildUpdater.stopPrebuildInstance(ctx, instance);
+                })(),
+            );
         }
         await Promise.all(promises);
     }
