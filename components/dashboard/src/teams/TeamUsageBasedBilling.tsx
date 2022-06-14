@@ -66,12 +66,17 @@ export default function TeamUsageBasedBilling() {
             return;
         }
         (async () => {
-            const setupIntentId = params.get("setup_intent")!;
-            window.history.replaceState({}, "", window.location.pathname);
-            await getGitpodService().server.subscribeTeamToStripe(team.id, setupIntentId, currency);
-            const pendingCustomer = { pendingSince: Date.now() };
-            setPendingStripeCustomer(pendingCustomer);
-            window.localStorage.setItem(`pendingStripeCustomerForTeam${team.id}`, JSON.stringify(pendingCustomer));
+            setIsLoading(true);
+            try {
+                const setupIntentId = params.get("setup_intent")!;
+                window.history.replaceState({}, "", window.location.pathname);
+                await getGitpodService().server.subscribeTeamToStripe(team.id, setupIntentId, currency);
+                const pendingCustomer = { pendingSince: Date.now() };
+                setPendingStripeCustomer(pendingCustomer);
+                window.localStorage.setItem(`pendingStripeCustomerForTeam${team.id}`, JSON.stringify(pendingCustomer));
+            } finally {
+                setIsLoading(false);
+            }
         })();
     }, [location.search, team]);
 
