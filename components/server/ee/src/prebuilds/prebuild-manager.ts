@@ -151,6 +151,8 @@ export class PrebuildManager {
                 }
             }
 
+            let usePVC = this.shouldUsePersistentVolumeClaim(project);
+
             const projectEnvVarsPromise = project ? this.projectService.getProjectEnvironmentVariables(project.id) : [];
 
             const workspace = await this.workspaceFactory.createForContext(
@@ -205,6 +207,7 @@ export class PrebuildManager {
                 const projectEnvVars = await projectEnvVarsPromise;
                 await this.workspaceStarter.startWorkspace({ span }, workspace, user, [], projectEnvVars, {
                     excludeFeatureFlags: ["full_workspace_backup"],
+                    forcePVC: usePVC,
                 });
             }
 
@@ -272,6 +275,13 @@ export class PrebuildManager {
         const trimRepoUrl = (url: string) => url.replace(/\/$/, "").replace(/\.git$/, "");
         const repoUrl = trimRepoUrl(cloneUrl);
         return this.config.incrementalPrebuilds.repositoryPasslist.some((url) => trimRepoUrl(url) === repoUrl);
+    }
+
+    protected shouldUsePersistentVolumeClaim(project?: Project): boolean {
+        if (project?.settings?.usePersistentVolumeClaim) {
+            return true;
+        }
+        return false;
     }
 
     async fetchConfig(ctx: TraceContext, user: User, context: CommitContext): Promise<WorkspaceConfig> {

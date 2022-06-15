@@ -116,6 +116,7 @@ export interface StartWorkspaceOptions {
     rethrow?: boolean;
     forceDefaultImage?: boolean;
     excludeFeatureFlags?: NamedWorkspaceFeatureFlag[];
+    forcePVC?: boolean;
 }
 
 const MAX_INSTANCE_START_RETRIES = 2;
@@ -275,7 +276,14 @@ export class WorkspaceStarter {
             let instance = await this.workspaceDb
                 .trace({ span })
                 .storeInstance(
-                    await this.newInstance(ctx, workspace, user, options.excludeFeatureFlags || [], ideConfig),
+                    await this.newInstance(
+                        ctx,
+                        workspace,
+                        user,
+                        options.excludeFeatureFlags || [],
+                        ideConfig,
+                        options.forcePVC,
+                    ),
                 );
             span.log({ newInstance: instance.id });
 
@@ -640,6 +648,7 @@ export class WorkspaceStarter {
         user: User,
         excludeFeatureFlags: NamedWorkspaceFeatureFlag[],
         ideConfig: IDEConfig,
+        forcePVC?: boolean,
     ): Promise<WorkspaceInstance> {
         //#endregion IDE resolution TODO(ak) move to IDE service
         // TODO: Compatible with ide-config not deployed, need revert after ide-config deployed
@@ -715,6 +724,10 @@ export class WorkspaceStarter {
         }
 
         featureFlags = featureFlags.filter((f) => !excludeFeatureFlags.includes(f));
+
+        if (forcePVC === true) {
+            featureFlags = featureFlags.concat(["persistent_volume_claim"]);
+        }
 
         if (!!featureFlags) {
             // only set feature flags if there actually are any. Otherwise we waste the
