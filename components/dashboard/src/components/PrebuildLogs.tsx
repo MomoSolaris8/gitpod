@@ -20,13 +20,14 @@ const WorkspaceLogs = React.lazy(() => import("./WorkspaceLogs"));
 
 export interface PrebuildLogsProps {
     workspaceId?: string;
+    logsEmitter?: EventEmitter;
 }
 
 export default function PrebuildLogs(props: PrebuildLogsProps) {
     const [workspace, setWorkspace] = useState<Workspace | undefined>();
     const [workspaceInstance, setWorkspaceInstance] = useState<WorkspaceInstance | undefined>();
     const [error, setError] = useState<Error | undefined>();
-    const [logsEmitter] = useState(new EventEmitter());
+    const [logsEmitter, setLogsEmitter] = useState(new EventEmitter());
 
     useEffect(() => {
         const disposables = new DisposableCollection();
@@ -34,6 +35,9 @@ export default function PrebuildLogs(props: PrebuildLogsProps) {
         (async () => {
             if (!props.workspaceId) {
                 return;
+            }
+            if (props.logsEmitter) {
+                setLogsEmitter(props.logsEmitter);
             }
             try {
                 const info = await getGitpodService().server.getWorkspace(props.workspaceId);

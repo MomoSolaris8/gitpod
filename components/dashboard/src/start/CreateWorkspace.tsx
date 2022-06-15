@@ -11,6 +11,7 @@ import {
     WorkspaceCreationResult,
     RunningWorkspacePrebuildStarting,
     ContextURL,
+    PrebuildWithStatus,
 } from "@gitpod/gitpod-protocol";
 import { ErrorCodes } from "@gitpod/gitpod-protocol/lib/messaging/error";
 import Modal from "../components/Modal";
@@ -21,12 +22,11 @@ import StartWorkspace, { parseProps } from "./StartWorkspace";
 import { openAuthorizeWindow } from "../provider-utils";
 import { SelectAccountPayload } from "@gitpod/gitpod-protocol/lib/auth";
 import { SelectAccountModal } from "../settings/SelectAccountModal";
-import { watchHeadlessLogs } from "../components/PrebuildLogs";
+import PrebuildLogs, { watchHeadlessLogs } from "../components/PrebuildLogs";
 import CodeText from "../components/CodeText";
 import FeedbackComponent from "../feedback-form/FeedbackComponent";
 import { isGitpodIo } from "../utils";
-
-const WorkspaceLogs = React.lazy(() => import("../components/WorkspaceLogs"));
+import { PrebuildStatus } from "../projects/Prebuilds";
 
 export interface CreateWorkspaceProps {
     contextUrl: string;
@@ -462,6 +462,7 @@ interface RunningPrebuildViewProps {
 
 function RunningPrebuildView(props: RunningPrebuildViewProps) {
     const [logsEmitter] = useState(new EventEmitter());
+    const [prebuild, setPrebuild] = useState<PrebuildWithStatus | undefined>();
 
     useEffect(() => {
         const disposables = watchHeadlessLogs(
@@ -480,6 +481,13 @@ function RunningPrebuildView(props: RunningPrebuildViewProps) {
                         props.onPrebuildSucceeded();
                     }
                 },
+                onPrebuildUpdate(update: PrebuildWithStatus) {
+                    if (update.info.id !== props.runningPrebuild.prebuildID) {
+                        return;
+                    }
+
+                    setPrebuild(prebuild);
+                },
             }),
         );
 
@@ -491,7 +499,8 @@ function RunningPrebuildView(props: RunningPrebuildViewProps) {
     return (
         <StartPage title="Prebuild in Progress">
             <Suspense fallback={<div />}>
-                <WorkspaceLogs logsEmitter={logsEmitter} />
+                <PrebuildLogs logsEmitter={logsEmitter} workspaceId={props.runningPrebuild.workspaceID} />
+                {prebuild && <PrebuildStatus prebuild={prebuild} />}
             </Suspense>
             <button
                 className="mt-6 secondary"
@@ -499,7 +508,7 @@ function RunningPrebuildView(props: RunningPrebuildViewProps) {
                     props.onIgnorePrebuild();
                 }}
             >
-                Don't Wait for Prebuild
+                Skip Prebuild
             </button>
         </StartPage>
     );
