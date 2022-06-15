@@ -58,7 +58,7 @@ var sendCmd = &cobra.Command{
 				Set("totalUsers", data.TotalUsers).
 				Set("totalWorkspaces", data.TotalWorkspaces).
 				Set("totalInstances", data.TotalInstances).
-				Set("licenseId", data.LicenseID),
+				Set("customerID", data.CustomerID),
 		}
 
 		client.Enqueue(telemetry)

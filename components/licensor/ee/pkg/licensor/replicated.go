@@ -118,6 +118,9 @@ func newReplicatedEvaluator(client *http.Client) (res *Evaluator) {
 
 		case "seats":
 			lic.Seats = int(i.Value.(float64))
+
+		case "customerID":
+			lic.CustomerID = i.Value.(string)
 		}
 	}
 

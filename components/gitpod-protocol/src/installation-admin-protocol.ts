@@ -28,7 +28,7 @@ export interface TelemetryData {
     totalUsers: number;
     totalWorkspaces: number;
     totalInstances: number;
-    licenseId?: string;
+    customerID?: string;
 }
 
 export namespace InstallationAdmin {
