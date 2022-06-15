@@ -82,6 +82,16 @@ export class MonitoringSatelliteInstaller {
                     requests: { memory: '200Mi', cpu: '50m' },
                 },
             },
+            remoteWrite: {
+                username: '${process.env.PROM_REMOTE_WRITE_USER}',
+                password: '${process.env.PROM_REMOTE_WRITE_PASSWORD}',
+                urls: ['https://prometheus.gitpod-dev.com/api/v1/write'],
+                writeRelabelConfigs: [{
+                    sourceLabels: ['__name__'],
+                    regex: 'probe_.*|rest_client_requests_total',
+                    action: 'keep',
+                }],
+            },
             kubescape: {},
             pyrra: {},
             probe: {
