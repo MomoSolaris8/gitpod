@@ -116,6 +116,7 @@ export class PrebuildManager {
                 branch: context.ref,
                 normalizedContextURL: context.normalizedContextURL,
             };
+            log.info("prebuild", prebuildContext.title);
 
             if (this.shouldPrebuildIncrementally(context.repository.cloneUrl, project)) {
                 const maxDepth = this.config.incrementalPrebuilds.commitHistory;
@@ -152,6 +153,7 @@ export class PrebuildManager {
             }
 
             let usePVC = this.shouldUsePersistentVolumeClaim(project);
+            log.info("usePVC flag", usePVC);
 
             const projectEnvVarsPromise = project ? this.projectService.getProjectEnvironmentVariables(project.id) : [];
 

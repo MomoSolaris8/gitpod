@@ -725,8 +725,10 @@ export class WorkspaceStarter {
 
         featureFlags = featureFlags.filter((f) => !excludeFeatureFlags.includes(f));
 
+        log.info("forcePVC", forcePVC);
         if (forcePVC === true) {
             featureFlags = featureFlags.concat(["persistent_volume_claim"]);
+            log.info("feature flags", featureFlags);
         }
 
         if (!!featureFlags) {
