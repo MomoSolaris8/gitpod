@@ -221,6 +221,7 @@ export class WorkspaceStarter {
 
         options = options || {};
         try {
+            log.info("options forcePVC", options.forcePVC);
             await this.checkBlockedRepository(user, workspace.contextURL);
 
             // Some workspaces do not have an image source.
@@ -282,7 +283,7 @@ export class WorkspaceStarter {
                         user,
                         options.excludeFeatureFlags || [],
                         ideConfig,
-                        options.forcePVC,
+                        options.forcePVC || false,
                     ),
                 );
             span.log({ newInstance: instance.id });
@@ -648,7 +649,7 @@ export class WorkspaceStarter {
         user: User,
         excludeFeatureFlags: NamedWorkspaceFeatureFlag[],
         ideConfig: IDEConfig,
-        forcePVC?: boolean,
+        forcePVC: boolean,
     ): Promise<WorkspaceInstance> {
         //#endregion IDE resolution TODO(ak) move to IDE service
         // TODO: Compatible with ide-config not deployed, need revert after ide-config deployed
