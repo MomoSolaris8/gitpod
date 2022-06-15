@@ -69,7 +69,7 @@ export default function () {
         setIsPersistentVolumeClaimEnabled(!!project.settings?.usePersistentVolumeClaim);
 
         (async () => {
-            /*const showPersistentVolumeClaim = await getExperimentsClient().getValueAsync(
+            const showPersistentVolumeClaim = await getExperimentsClient().getValueAsync(
                 "persistent_volume_claim",
                 false,
                 {
@@ -78,9 +78,9 @@ export default function () {
                     teamName: team?.name,
                     teams,
                 },
-            );*/
+            );
             // HACK: Do not merge this!!!
-            setIsShowPersistentVolumeClaim(true); // showPersistentVolumeClaim);
+            setIsShowPersistentVolumeClaim(true || showPersistentVolumeClaim);
         })();
     }, [project, team, teams]);
 
