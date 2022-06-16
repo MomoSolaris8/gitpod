@@ -99,8 +99,9 @@ func (ws *GitInitializer) Run(ctx context.Context, mappings []archive.IDMapping)
 		return src, xerrors.Errorf("git initializer gitClone: %w", err)
 	}
 
+	log.Infof("AddSafeDirectory: %s", ws.Location)
 	if err := ws.AddSafeDirectory(ctx, ws.Location); err != nil {
-		return src, xerrors.Errorf("git initializer AddSafeDirectory: %w", err)
+		log.WithError(err).Warn("git initializer AddSafeDirectory")
 	}
 
 	if ws.Chown {
