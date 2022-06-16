@@ -561,6 +561,18 @@ var ring1Cmd = &cobra.Command{
 			}
 		}()
 
+		prestophookFunc := func() {
+			log.Infof("about to execute prestophook.sh from ring1.")
+			cmd := exec.Command("/.supervisor/prestophook.sh")
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			err := cmd.Run()
+			if err != nil {
+				log.WithError(err).Error("prestophook.sh error")
+			}
+		}
+		defer prestophookFunc()
+
 		err = cmd.Wait()
 		if err != nil {
 			if eerr, ok := err.(*exec.ExitError); ok {
