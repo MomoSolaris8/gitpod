@@ -1320,7 +1320,10 @@ export class WorkspaceStarter {
         );
         const userTimeoutPromise = this.userService.getDefaultWorkspaceTimeout(user);
 
-        const featureFlags = instance.configuration!.featureFlags || [];
+        let featureFlags = instance.configuration!.featureFlags || [];
+        if (volumeSnapshots !== undefined) {
+            featureFlags = featureFlags.concat(["persistent_volume_claim"]);
+        }
 
         let ideImage: string;
         if (!!instance.configuration?.ideImage) {
