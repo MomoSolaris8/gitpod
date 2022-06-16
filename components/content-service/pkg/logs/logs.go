@@ -62,9 +62,15 @@ func ListPrebuildLogFiles(ctx context.Context, location string) (filePaths []str
 		}
 		return logFiles, nil
 	}
-	filePaths, err = listLogFiles(strings.TrimPrefix(TerminalStoreLocation, "/workspace"), prebuildLogFilePrefix)
+	filePaths, err = listLogFiles("", prebuildLogFilePrefix)
 	if err != nil {
 		return nil, err
+	}
+	if len(filePaths) == 0 {
+		filePaths, err = listLogFiles(strings.TrimPrefix(TerminalStoreLocation, "/workspace"), prebuildLogFilePrefix)
+		if err != nil {
+			return nil, err
+		}
 	}
 	if len(filePaths) == 0 {
 		filePaths, err = listLogFiles(strings.TrimPrefix(legacyTerminalStoreLocation, "/workspace"), legacyPrebuildLogFilePrefix)
