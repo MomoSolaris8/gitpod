@@ -664,9 +664,11 @@ func (s *WorkspaceService) uploadWorkspaceLogs(ctx context.Context, sess *sessio
 	logLocation := sess.Location
 	if sess.PersistentVolumeClaim {
 		logLocation = filepath.Join(sess.ServiceLocDaemon, "prestophookdata")
+		log.Infof("selected log location: %s", logLocation)
 	}
 	// currently we're only uploading prebuild log files
 	logFiles, err := logs.ListPrebuildLogFiles(ctx, logLocation)
+	log.Infof("logFiles: %v, err: %v", logFiles, err)
 	if err != nil {
 		return err
 	}
