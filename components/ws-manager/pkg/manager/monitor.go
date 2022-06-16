@@ -1060,7 +1060,22 @@ func (m *Monitor) finalizeWorkspaceContent(ctx context.Context, wso *workspaceOb
 				err = m.manager.markWorkspace(context.Background(), workspaceID, addMark(pvcWorkspaceVolumeSnapshotAnnotation, string(b)))
 				if err != nil {
 					log.WithError(err).Error("cannot mark workspace with volume snapshot name - snapshot will be orphaned and backup lost")
+					// todo: addMark(workspaceExplicitFailAnnotation
 					return true, nil, err
+				}
+
+				if tpe == api.WorkspaceType_PREBUILD {
+					err = m.manager.markWorkspace(context.Background(), workspaceID, addMark(workspaceSnapshotAnnotation, pvcVolumeSnapshotName))
+					if err != nil {
+						tracing.LogError(span, err)
+						log.WithError(err).Warn("cannot mark headless workspace with snapshot - that's one prebuild lost")
+						err = xerrors.Errorf("cannot remember snapshot: %v", err)
+						err = m.manager.markWorkspace(ctx, workspaceID, addMark(workspaceExplicitFailAnnotation, err.Error()))
+						if err != nil {
+							log.WithError(err).Warn("was unable to mark workspace as failed")
+						}
+						return true, nil, err
+					}
 				}
 
 				markVolumeSnapshotAnnotation = true
