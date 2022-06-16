@@ -307,7 +307,7 @@ func Run(options ...RunOption) {
 
 	if cfg.isHeadless() {
 		wg.Add(1)
-		go stopWhenTasksAreDone(ctx, &wg, shutdown, tasksSuccessChan)
+		go stopWhenTasksAreDone(ctx, &wg, shutdown, tasksSuccessChan, childProcEnvvars)
 	} else {
 		wg.Add(1)
 		go portMgmt.Run(ctx, &wg)
@@ -1205,7 +1205,7 @@ func tunnelOverSSH(ctx context.Context, tunneled *ports.TunneledPortsService, ne
 	<-ctx.Done()
 }
 
-func stopWhenTasksAreDone(ctx context.Context, wg *sync.WaitGroup, shutdown chan ShutdownReason, successChan <-chan taskSuccess) {
+func stopWhenTasksAreDone(ctx context.Context, wg *sync.WaitGroup, shutdown chan ShutdownReason, successChan <-chan taskSuccess, childProcEnvvars []string) {
 	defer wg.Done()
 	defer close(shutdown)
 
@@ -1218,6 +1218,17 @@ func stopWhenTasksAreDone(ctx context.Context, wg *sync.WaitGroup, shutdown chan
 			log.WithError(err).Error("err while writing termination log")
 		}
 	}
+
+	log.Infof("about to execute prestophook.sh. env: %v", childProcEnvvars)
+	cmd := runAsGitpodUser(exec.Command("/.supervisor/workspacekit", "lift", "/.supervisor/prestophook.sh"))
+	cmd.Env = childProcEnvvars
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		log.WithError(err).Error("prestophook.sh error")
+	}
+
 	shutdown <- ShutdownReasonSuccess
 }
 
