@@ -342,7 +342,7 @@ func (c *Client) Fetch(ctx context.Context) (err error) {
 }
 
 func (c *Client) AddSafeDirectory(ctx context.Context, dir string) (err error) {
-	return c.Git(ctx, "config", "--global", "--add", "safe.directory", dir)
+	return c.Git(ctx, "config", "--add", "safe.directory", dir)
 }
 
 // UpdateRemote performs a git fetch on the upstream remote URI
