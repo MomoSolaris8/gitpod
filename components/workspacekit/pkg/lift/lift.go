@@ -32,12 +32,14 @@ type LiftRequest struct {
 }
 
 func ServeLift(ctx context.Context, socket string) error {
+	log.Info("ServeLift called")
 	skt, err := net.Listen("unix", socket)
 	if err != nil {
 		return err
 	}
 
 	defer func() {
+		log.Info("ServeLift exiting")
 		err := skt.Close()
 		if err != nil {
 			log.WithError(err).Error("unexpected error closing listener")
@@ -76,6 +78,7 @@ func serveLiftClient(conn net.Conn) error {
 	}
 
 	defer func() {
+		log.Info("serveLiftClient exiting")
 		err := f.Close()
 		if err != nil {
 			log.WithError(err).Error("unexpected error closing connection")

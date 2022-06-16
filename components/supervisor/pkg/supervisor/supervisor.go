@@ -1220,7 +1220,7 @@ func stopWhenTasksAreDone(ctx context.Context, wg *sync.WaitGroup, shutdown chan
 	}
 
 	log.Infof("about to execute prestophook.sh. env: %v", childProcEnvvars)
-	cmd := runAsGitpodUser(exec.Command("/.supervisor/prestophook.sh"))
+	cmd := runAsGitpodUser(exec.Command("/.supervisor/workspacekit", "lift", "/.supervisor/prestophook.sh"))
 	cmd.Env = childProcEnvvars
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
