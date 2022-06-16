@@ -1296,10 +1296,15 @@ export class WorkspaceStarter {
             }
         }
 
+        let volumeSnapshotId = lastValidWorkspaceInstanceId;
+        // if this is snapshot or prebuild context, then try to find volume snapshot id in it
+        if (SnapshotContext.is(workspace.context)) {
+            volumeSnapshotId = workspace.context.snapshotBucketId;
+        } else if (WithPrebuild.is(workspace.context)) {
+            volumeSnapshotId = workspace.context.snapshotBucketId;
+        }
         let volumeSnapshotInfo = new VolumeSnapshotInfo();
-        const volumeSnapshots = await this.workspaceDb
-            .trace(traceCtx)
-            .findVolumeSnapshotById(lastValidWorkspaceInstanceId);
+        const volumeSnapshots = await this.workspaceDb.trace(traceCtx).findVolumeSnapshotById(volumeSnapshotId);
         if (volumeSnapshots !== undefined) {
             volumeSnapshotInfo.setVolumeSnapshotName(volumeSnapshots.id);
             volumeSnapshotInfo.setVolumeSnapshotHandle(volumeSnapshots.volumeHandle);
@@ -1483,6 +1488,7 @@ export class WorkspaceStarter {
         } else if (SnapshotContext.is(context)) {
             const snapshot = new SnapshotInitializer();
             snapshot.setSnapshot(context.snapshotBucketId);
+            snapshot.setFromVolumeSnapshot(hasVolumeSnapshot);
             result.setSnapshot(snapshot);
         } else if (WithPrebuild.is(context)) {
             if (!CommitContext.is(context)) {
@@ -1491,6 +1497,7 @@ export class WorkspaceStarter {
 
             const snapshot = new SnapshotInitializer();
             snapshot.setSnapshot(context.snapshotBucketId);
+            snapshot.setFromVolumeSnapshot(hasVolumeSnapshot);
             const { initializer } = await this.createCommitInitializer(traceCtx, workspace, context, user);
             const init = new PrebuildInitializer();
             init.setPrebuild(snapshot);
