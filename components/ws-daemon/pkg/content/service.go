@@ -186,6 +186,8 @@ func (s *WorkspaceService) InitWorkspace(ctx context.Context, req *api.InitWorks
 		}
 	}()
 
+	log.Info("InitWorkspace")
+
 	if req.Id == "" {
 		return nil, status.Error(codes.InvalidArgument, "ID is required")
 	}
@@ -284,6 +286,7 @@ func (s *WorkspaceService) InitWorkspace(ctx context.Context, req *api.InitWorks
 	}
 
 	if req.PersistentVolumeClaim {
+		log.Info("creating prestophookdata folder")
 		// create a folder that is used to store data from running prestophook
 		deamonDir := fmt.Sprintf("%s-daemon", req.Id)
 		prestophookDir := filepath.Join(s.config.WorkingArea, deamonDir, "prestophookdata")
