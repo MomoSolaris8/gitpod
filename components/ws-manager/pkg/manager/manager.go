@@ -288,6 +288,7 @@ func (m *Manager) StartWorkspace(ctx context.Context, req *api.StartWorkspaceReq
 
 		// we only calculate the time that PVC restoring from VolumeSnapshot
 		if createPVC && startContext.VolumeSnapshot != nil && startContext.VolumeSnapshot.VolumeSnapshotName != "" {
+			log.Infof("test: %v, %v", m, pvc)
 			err = wait.PollWithContext(ctx, 100*time.Millisecond, time.Minute, pvcRunning(m.Clientset, pvc.Name, pvc.Namespace))
 			if err != nil {
 				return false, nil
