@@ -27,7 +27,7 @@ export default function PrebuildLogs(props: PrebuildLogsProps) {
     const [workspace, setWorkspace] = useState<Workspace | undefined>();
     const [workspaceInstance, setWorkspaceInstance] = useState<WorkspaceInstance | undefined>();
     const [error, setError] = useState<Error | undefined>();
-    const [logsEmitter, setLogsEmitter] = useState(new EventEmitter());
+    const [logsEmitter] = useState(new EventEmitter());
 
     useEffect(() => {
         const disposables = new DisposableCollection();
@@ -35,9 +35,6 @@ export default function PrebuildLogs(props: PrebuildLogsProps) {
         (async () => {
             if (!props.workspaceId) {
                 return;
-            }
-            if (props.logsEmitter) {
-                setLogsEmitter(props.logsEmitter);
             }
             try {
                 const info = await getGitpodService().server.getWorkspace(props.workspaceId);

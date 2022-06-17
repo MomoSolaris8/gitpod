@@ -365,6 +365,7 @@ function PrebuildStatusDescription(props: { prebuild: PrebuildWithStatus }) {
 }
 
 export function PrebuildStatus(props: { prebuild: PrebuildWithStatus }) {
+    console.log("prebuild status: ", props.prebuild.status);
     const prebuild = props.prebuild;
 
     return (

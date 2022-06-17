@@ -22,11 +22,13 @@ import StartWorkspace, { parseProps } from "./StartWorkspace";
 import { openAuthorizeWindow } from "../provider-utils";
 import { SelectAccountPayload } from "@gitpod/gitpod-protocol/lib/auth";
 import { SelectAccountModal } from "../settings/SelectAccountModal";
-import PrebuildLogs, { watchHeadlessLogs } from "../components/PrebuildLogs";
+import { watchHeadlessLogs } from "../components/PrebuildLogs";
 import CodeText from "../components/CodeText";
 import FeedbackComponent from "../feedback-form/FeedbackComponent";
 import { isGitpodIo } from "../utils";
 import { PrebuildStatus } from "../projects/Prebuilds";
+
+const WorkspaceLogs = React.lazy(() => import("../components/WorkspaceLogs"));
 
 export interface CreateWorkspaceProps {
     contextUrl: string;
@@ -246,6 +248,7 @@ export default class CreateWorkspace extends React.Component<CreateWorkspaceProp
                 </Modal>
             );
         } else if (result?.runningWorkspacePrebuild) {
+            console.log("we have a running prebuild");
             return (
                 <RunningPrebuildView
                     runningPrebuild={result.runningWorkspacePrebuild}
@@ -487,6 +490,7 @@ function RunningPrebuildView(props: RunningPrebuildViewProps) {
                     }
 
                     setPrebuild(prebuild);
+                    console.log("we have prebuild? ", prebuild);
                 },
             }),
         );
@@ -499,7 +503,7 @@ function RunningPrebuildView(props: RunningPrebuildViewProps) {
     return (
         <StartPage title="Prebuild in Progress">
             <Suspense fallback={<div />}>
-                <PrebuildLogs logsEmitter={logsEmitter} workspaceId={props.runningPrebuild.workspaceID} />
+                <WorkspaceLogs logsEmitter={logsEmitter} />
                 {prebuild && <PrebuildStatus prebuild={prebuild} />}
             </Suspense>
             <button
