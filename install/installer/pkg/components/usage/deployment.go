@@ -81,6 +81,8 @@ func deployment(ctx *common.RenderContext) ([]runtime.Object, error) {
 								"run",
 								"--schedule",
 								"$(RECONCILER_SCHEDULE)",
+								"--enable-payment",
+								"$(ENABLE_PAYMENT)",
 							},
 							ImagePullPolicy: corev1.PullIfNotPresent,
 							Resources: common.ResourceRequirements(ctx, Component, Component, corev1.ResourceRequirements{
@@ -96,15 +98,26 @@ func deployment(ctx *common.RenderContext) ([]runtime.Object, error) {
 							Env: common.MergeEnv(
 								common.DefaultEnv(&ctx.Config),
 								common.DatabaseEnv(&ctx.Config),
-								[]corev1.EnvVar{{
-									Name: "RECONCILER_SCHEDULE",
-									ValueFrom: &corev1.EnvVarSource{
-										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
-											LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-config", Component)},
-											Key:                  "schedule",
+								[]corev1.EnvVar{
+									{
+										Name: "RECONCILER_SCHEDULE",
+										ValueFrom: &corev1.EnvVarSource{
+											ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-config", Component)},
+												Key:                  "schedule",
+											},
 										},
 									},
-								}},
+									{
+										Name: "ENABLE_PAYMENT",
+										ValueFrom: &corev1.EnvVarSource{
+											ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+												LocalObjectReference: corev1.LocalObjectReference{Name: fmt.Sprintf("%s-config", Component)},
+												Key:                  "enablePayment",
+											},
+										},
+									},
+								},
 							),
 							VolumeMounts: volumeMounts,
 							LivenessProbe: &corev1.Probe{

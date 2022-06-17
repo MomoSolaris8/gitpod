@@ -5,6 +5,7 @@ package usage
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gitpod-io/gitpod/installer/pkg/common"
 	"github.com/gitpod-io/gitpod/installer/pkg/config/v1/experimental"
@@ -15,9 +16,14 @@ import (
 
 func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 	schedule := "1h"
+	enablePayment := false
+
 	_ = ctx.WithExperimental(func(ucfg *experimental.Config) error {
 		if ucfg.WebApp != nil && ucfg.WebApp.Usage != nil && ucfg.WebApp.Usage.Schedule != "" {
 			schedule = ucfg.WebApp.Usage.Schedule
+		}
+		if ucfg.WebApp != nil && ucfg.WebApp.Usage != nil {
+			enablePayment = ucfg.WebApp.Usage.EnablePayment
 		}
 		return nil
 	})
@@ -31,7 +37,8 @@ func configmap(ctx *common.RenderContext) ([]runtime.Object, error) {
 				Labels:    common.DefaultLabels(Component),
 			},
 			Data: map[string]string{
-				"schedule": schedule,
+				"schedule":      schedule,
+				"enablePayment": strconv.FormatBool(enablePayment),
 			},
 		},
 	}, nil

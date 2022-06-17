@@ -164,8 +164,9 @@ type PublicAPIConfig struct {
 }
 
 type UsageConfig struct {
-	Enabled  bool   `json:"enabled"`
-	Schedule string `json:"schedule"`
+	Enabled       bool   `json:"enabled"`
+	Schedule      string `json:"schedule"`
+	EnablePayment bool   `json:"enablePayment"`
 }
 
 type IDEConfig struct {
