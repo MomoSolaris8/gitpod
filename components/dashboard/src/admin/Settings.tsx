@@ -36,7 +36,7 @@ export default function Settings() {
         await getGitpodService().server.adminUpdateSettings(value);
         setAdminSettings(value);
 
-        // Telemetry preferences have been reloaded, update
+        // Update telemetry presented to the user upon settings change.
         const data = await getGitpodService().server.adminGetTelemetryData();
         setTelemetryData(data);
     };
@@ -49,15 +49,19 @@ export default function Settings() {
                 subtitle="Configure settings for your Gitpod cluster."
             >
                 <h3>Usage Statistics</h3>
+                <p className="text-base text-gray-500 pb-4 max-w-2xl">
+                    We collect usage telemetry to gain insights on how you use your Gitpod instance, so we can provide a
+                    better overall experience.{" "}
+                    <a className="gp-link" href="https://www.gitpod.io/privacy">
+                        Read our Privacy Policy
+                    </a>
+                </p>
                 <CheckBox
-                    title="Enable Service Ping"
+                    title="Enable usage telemetry"
                     desc={
                         <span>
-                            The following usage data is sent to provide insights on how you use your Gitpod instance, so
-                            we can provide a better overall experience.{" "}
-                            <a className="gp-link" href="https://www.gitpod.io/privacy">
-                                Read our Privacy Policy
-                            </a>
+                            Enable usage telemetry on your Gitpod instance. A preview of your telemetry is available
+                            below.
                         </span>
                     }
                     checked={adminSettings?.sendTelemetry ?? false}
@@ -72,10 +76,7 @@ export default function Settings() {
                     title="Include customer ID in telemetry"
                     desc={
                         <span>
-                            An optional customer ID can be included with telemetry to provide better customer support.{" "}
-                            <a className="gp-link" href="https://www.gitpod.io/privacy">
-                                Read our Privacy Policy
-                            </a>
+                            Include an optional customer ID in usage telemetry to provide individualized support.
                         </span>
                     }
                     checked={adminSettings?.sendCustomerID ?? false}
