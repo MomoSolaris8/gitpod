@@ -35,6 +35,10 @@ export default function Settings() {
     const actuallySetTelemetryPrefs = async (value: InstallationAdminSettings) => {
         await getGitpodService().server.adminUpdateSettings(value);
         setAdminSettings(value);
+
+        // Telemetry preferences have been reloaded, update
+        const data = await getGitpodService().server.adminGetTelemetryData();
+        setTelemetryData(data);
     };
 
     return (
