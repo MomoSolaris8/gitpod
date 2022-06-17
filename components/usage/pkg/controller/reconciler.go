@@ -30,12 +30,13 @@ func (f ReconcilerFunc) Reconcile() error {
 }
 
 type UsageReconciler struct {
-	nowFunc func() time.Time
-	conn    *gorm.DB
+	nowFunc        func() time.Time
+	paymentEnabled bool
+	conn           *gorm.DB
 }
 
-func NewUsageReconciler(conn *gorm.DB) *UsageReconciler {
-	return &UsageReconciler{conn: conn, nowFunc: time.Now}
+func NewUsageReconciler(conn *gorm.DB, paymentEnabled bool) *UsageReconciler {
+	return &UsageReconciler{conn: conn, paymentEnabled: paymentEnabled, nowFunc: time.Now}
 }
 
 type UsageReconcileStatus struct {
@@ -126,7 +127,9 @@ func (u *UsageReconciler) ReconcileTimeRange(ctx context.Context, from, to time.
 	}
 	status.Report = report
 
-	submitUsageReport(status.Report)
+	if u.paymentEnabled {
+		submitUsageReport(status.Report)
+	}
 
 	return status, nil
 }

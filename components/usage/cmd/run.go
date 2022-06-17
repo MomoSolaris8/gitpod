@@ -22,9 +22,10 @@ func init() {
 
 func run() *cobra.Command {
 	var (
-		verbose    bool
-		apiKeyFile string
-		schedule   time.Duration
+		verbose        bool
+		paymentEnabled bool
+		apiKeyFile     string
+		schedule       time.Duration
 	)
 
 	cmd := &cobra.Command{
@@ -44,12 +45,15 @@ func run() *cobra.Command {
 				log.WithError(err).Fatal("Failed to establish database connection.")
 			}
 
-			err = stripe.Authenticate(apiKeyFile)
-			if err != nil {
-				log.WithError(err).Fatal("Failed to initialize stripe client.")
+			log.Infof("payment integration with Stripe is set to %v", paymentEnabled)
+			if paymentEnabled {
+				err = stripe.Authenticate(apiKeyFile)
+				if err != nil {
+					log.WithError(err).Fatal("Failed to initialize stripe client.")
+				}
 			}
 
-			ctrl, err := controller.New(schedule, controller.NewUsageReconciler(conn))
+			ctrl, err := controller.New(schedule, controller.NewUsageReconciler(conn, paymentEnabled))
 			if err != nil {
 				log.WithError(err).Fatal("Failed to initialize usage controller.")
 			}
@@ -74,7 +78,8 @@ func run() *cobra.Command {
 
 	cmd.Flags().BoolVar(&verbose, "verbose", false, "Toggle verbose logging (debug level)")
 	cmd.Flags().DurationVar(&schedule, "schedule", 1*time.Hour, "The schedule on which the reconciler should run")
-	cmd.Flags().StringVar(&apiKeyFile, "api-key-file", "/stripe-secret/apikeys", "Location of the stripe credentials file on disk")
+	cmd.Flags().BoolVar(&paymentEnabled, "enable-payment", false, "Whether or not payment integration with Stripe should be enabled")
+	cmd.Flags().StringVar(&apiKeyFile, "api-key-file", "/stripe-secret/apikeys", "Location of the Stripe credentials file on disk")
 
 	return cmd
 }
