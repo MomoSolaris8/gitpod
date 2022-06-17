@@ -29,6 +29,7 @@
         <projectService serviceImplementation="io.gitpod.jetbrains.remote.GitpodTerminalService" preload="true"/>
         <projectService serviceImplementation="io.gitpod.jetbrains.remote.GitpodProjectManager" preload="true"/>
         <gateway.customization.name implementation="io.gitpod.jetbrains.remote.GitpodGatewayClientCustomizationProvider"/>
+        <gateway.customization.metrics implementation="io.gitpod.jetbrains.remote.GitpodMetricProvider"/>
     </extensions>
 
 </idea-plugin>
