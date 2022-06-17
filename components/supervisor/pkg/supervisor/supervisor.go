@@ -282,6 +282,7 @@ func Run(options ...RunOption) {
 		// We need to checkout dotfiles first, because they may be changing the path which affects the IDE.
 		// TODO(cw): provide better feedback if the IDE start fails because of the dotfiles (provide any feedback at all).
 		installDotfiles(ctx, cfg, tokenService, childProcEnvvars)
+		changeSSHDefaultDir()
 	}
 
 	var ideWG sync.WaitGroup
@@ -1568,6 +1569,17 @@ func trackReadiness(ctx context.Context, gitpodService *gitpod.APIoverJSONRPC, c
 			<-desktopIdeReady.Wait()
 			trackFn(ctx, gitpodService, cfg, readinessKindDesktopIDE)
 		}()
+	}
+}
+
+func changeSSHDefaultDir() {
+	file, err := os.OpenFile("/home/gitpod/.bashrc", os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		log.WithError(err).Error("cannot write .bashrc")
+	}
+	defer file.Close()
+	if _, err := file.WriteString("\nif [[ -n $SSH_CONNECTION ]]; then cd \"$GITPOD_REPO_ROOT\"; fi\n"); err != nil {
+		log.WithError(err).Error("write .bashrc failed")
 	}
 }
 
