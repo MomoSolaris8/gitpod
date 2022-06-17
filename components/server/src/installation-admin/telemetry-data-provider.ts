@@ -26,8 +26,12 @@ export class InstallationAdminTelemetryDataProvider {
                 totalUsers: await this.userDb.getUserCount(true),
                 totalWorkspaces: await this.workspaceDb.getWorkspaceCount(),
                 totalInstances: await this.workspaceDb.getInstanceCount(),
-                customerID: this.licenseEvaluator.getLicenseData().payload.customerID,
             } as TelemetryData;
+
+            if (data.installationAdmin.settings.sendCustomerID) {
+                data.customerID = this.licenseEvaluator.getLicenseData().payload.customerID;
+            }
+
             return data;
         } finally {
             span.finish();
