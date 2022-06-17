@@ -84,6 +84,9 @@ export class Installer {
 
                 // let installer know that there is a stripe config
                 exec(`yq w -i ${this.options.installerConfigPath} experimental.webapp.server.stripeSecret stripe-api-keys`, { slice: slice });
+
+                // Enable payment integration in the usage component
+                exec(`yq w -i ${this.options.installerConfigPath} experimental.webapp.usage.enablePayment true`, { slice: slice });
             }
 
         } catch (err) {
