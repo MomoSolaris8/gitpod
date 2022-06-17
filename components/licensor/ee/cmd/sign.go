@@ -92,7 +92,6 @@ func init() {
 	rootCmd.AddCommand(signCmd)
 
 	signCmd.Flags().String("domain", "", "domain for which the license is valid")
-	signCmd.Flags().String("customer-id", "", "analytics customer ID")
 	signCmd.Flags().String("id", "", "ID of the license")
 	signCmd.Flags().String("level", "enterprise", "license level, must be one of team, enterprise")
 	signCmd.Flags().Int("seats", 5, "number of seats the license is valid for")
