@@ -283,6 +283,7 @@ func Run(options ...RunOption) {
 		// TODO(cw): provide better feedback if the IDE start fails because of the dotfiles (provide any feedback at all).
 		installDotfiles(ctx, cfg, tokenService, childProcEnvvars)
 		changeSSHDefaultDir()
+		changeSSHMessageOfTheDay()
 	}
 
 	var ideWG sync.WaitGroup
@@ -1580,6 +1581,29 @@ func changeSSHDefaultDir() {
 	defer file.Close()
 	if _, err := file.WriteString("\nif [[ -n $SSH_CONNECTION ]]; then cd \"$GITPOD_REPO_ROOT\"; fi\n"); err != nil {
 		log.WithError(err).Error("write .bashrc failed")
+	}
+}
+
+func changeSSHMessageOfTheDay() {
+	msg := []byte(`
+
+
+Welcome to Gitpod - Always ready to code. You use commands below to be more productive.
+
+	gp tasks list         List all your defined tasks in .gitpod.yml
+	gp tasks attach       Attach to a workspace task
+
+	gp ports list         Lists workspace ports and their states
+	gp timeout extend     Extend timeout of current workspace
+	gp top                Display usage of workspace resources (CPU and memory)
+	gp stop               Stop current workspace
+
+Use gp help to learn more about gp CLI. Visit also https://gitpod.io/docs
+
+`)
+
+	if err := ioutil.WriteFile("/etc/motd", msg, 0o644); err != nil {
+		log.WithError(err).Error("write /etc/motd failed")
 	}
 }
 
