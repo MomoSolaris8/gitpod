@@ -41,9 +41,12 @@ export class ConfigInferrer {
         if (!pckjsonContent) {
             return;
         }
-        let command: "yarn" | "npm" = "npm";
+        let command: "yarn" | "npm" | "pnpm" = "npm";
         if (await ctx.exists("yarn.lock")) {
             command = "yarn";
+        }
+        if (await ctx.exists("pnpm-lock.yaml") || pckjsonContent.packageManager.startsWith("pnpm")) {
+            command = "pnpm";
         }
         this.addCommand(ctx.config, command + " install", "init");
         try {
